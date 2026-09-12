@@ -4,3 +4,4 @@
 _start:
     la sp, stack_top
     call kernel_main
+    
