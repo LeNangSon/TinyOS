@@ -31,7 +31,7 @@ trap_entry:
     sd  x29, 216(sp)
     sd  x30, 224(sp)
     sd  x31, 232(sp)
-    call trap_handle
+    call trap_handler
     # return
     ld  x1, 0(sp)
     ld  x3, 8(sp)
