@@ -4,6 +4,24 @@
 
 extern void trap_entry(void);
 
+void trap_init(void){
+    const unsigned long meie = 1UL << 11;
+
+    // enable mie.MEIE (bit 11)
+    // enable mstatus.mie (bit 3)
+    // order matters
+    asm volatile(
+        "csrw mtvec, %0"
+        :
+        : "r"(trap_entry)
+    );
+
+    uart_interrupt_init();
+
+    asm volatile("csrs mie, %0" : : "r"(meie) : "memory");
+    asm volatile("csrsi mstatus, 8" : : : "memory");
+}
+
 static inline unsigned long read_mcause(void){
     unsigned long value;
 
@@ -17,28 +35,33 @@ static inline unsigned long read_mcause(void){
 }
 
 void machine_software_interrupt_handler(void){
-    // do something
     uart_puts("Machine Software Interrupt");
+    // do something
     *CLINT_BASE = 0;
 }
 
 void machine_timer_interrupt_handler(void){
-    // do something
     uart_puts("Machine Timer Interrupt");
+    // do something
     *CLINT_MTIMECMP = *CLINT_MTIME + INTERVAL;
 }
 
-void machine_external_interrupt_handler(void){
-    // do something
-    uart_puts("Machine External Interrupt");
-}
+void machine_external_interrupt_handler(void)
+{
+    uint32_t irq = *PLIC_CLAIM;
 
-void trap_init(void){
-    asm volatile(
-        "csrw mtvec, %0"
-        :
-        : "r"(trap_entry)
-    );
+    if (irq == 0)
+        return;
+
+    switch (irq) {
+        case UART0_IRQ:
+            uart_interrupt_handler();
+            break;
+        default:
+            break;
+    }
+
+    *PLIC_CLAIM = irq;
 }
 
 void trap_handler(void){

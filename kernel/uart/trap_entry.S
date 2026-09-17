@@ -1,4 +1,5 @@
 .global trap_entry
+.align 2
 trap_entry:
     addi sp, sp, -240
     sd  x1, 0(sp)
